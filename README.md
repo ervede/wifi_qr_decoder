@@ -132,6 +132,8 @@ Useful when:
 - The QR code image updates
 - You want to refresh sensors on demand
 
+---
+
 ## 🔐 Privacy & Security
 
 If you do not want the WiFi password stored in Home Assistant’s database, add this to your configuration.yaml:
@@ -160,6 +162,8 @@ This prevents the password from appearing in:
 - Logbook
 - Recorder database
 
+---
+
 ## 🧩 Example Dashboard Card
 ```yaml
 type: markdown
@@ -168,7 +172,8 @@ content: |
   **SSID:** {{ states('sensor.guest_wifi_ssid') }}
   **Password:** {{ states('sensor.guest_wifi_password') }}
 ```
-  ---
+
+---
 
 ## 🛠️ Troubleshooting
 - If the integration does not appear, restart Home Assistant Core.
