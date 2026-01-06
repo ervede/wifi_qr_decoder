@@ -1,11 +1,12 @@
 {
   "domain": "wifi_qr_decoder",
   "name": "WiFi QR Decoder",
-  "version": "2026.1.0",
-  "documentation": "https://example.com",
-  "requirements": ["pyzbar", "Pillow"],
+  "version": "2026.1.2",
+  "documentation": "https://github.com/ervede/wifi_qr_decoder",
+  "requirements": ["pyzbar"],
   "codeowners": ["@ervede"],
-  "config_flow": true,
   "iot_class": "local_polling",
-  "integration_type": "helper"
+  "integration_type": "hub",
+  "icon": "icon.png",
+  "config_flow": true
 }

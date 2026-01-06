@@ -1,104 +1,133 @@
-import aiohttp
-import base64
-from io import BytesIO
-
-from PIL import Image
-from pyzbar.pyzbar import decode
-
+import logging
+import re
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.network import get_url
+from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, CONF_IMAGE_ENTITY
+from .const import DOMAIN
 
-
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
-    image_entity = entry.options.get(CONF_IMAGE_ENTITY, entry.data[CONF_IMAGE_ENTITY])
-
-    async_add_entities([
-        WifiSSIDSensor(hass, image_entity),
-        WifiPasswordSensor(hass, image_entity),
-    ], update_before_add=True)
+_LOGGER = logging.getLogger(__name__)
 
 
-class WifiBaseSensor(SensorEntity):
-    _attr_should_poll = True
+def normalize_ssid(ssid: str) -> str:
+    ssid = ssid.lower().strip()
+    ssid = re.sub(r"[^a-z0-9_]+", "_", ssid)
+    ssid = re.sub(r"_+", "_", ssid)
+    return ssid.strip("_")
 
-    def __init__(self, hass: HomeAssistant, image_entity: str):
-        self.hass = hass
-        self.image_entity = image_entity
-        self._attr_native_value = None
 
-    async def fetch_image_bytes(self):
-        entity = self.hass.states.get(self.image_entity)
-        if not entity:
-            return None
+async def async_setup_entry(hass, entry, async_add_entities):
+    """Set up sensors for a config entry."""
+    coordinator = hass.data[DOMAIN][entry.entry_id]
 
-        entity_picture = entity.attributes.get("entity_picture")
-        if not entity_picture:
-            return None
+    entities = [
+        WifiSSIDSensor(coordinator, entry),
+        WifiPasswordSensor(coordinator, entry),
+        WifiDecodeStatusSensor(coordinator, entry),
+    ]
+    async_add_entities(entities)
 
-        base_url = get_url(self.hass)
-        full_url = f"{base_url}{entity_picture}"
 
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(full_url) as resp:
-                    if resp.status == 200:
-                        return await resp.read()
-            except Exception:
-                return None
+class WifiBaseSensor(CoordinatorEntity, SensorEntity):
+    """Base class for WiFi QR Decoder sensors."""
 
-        return None
+    def __init__(self, coordinator, entry):
+        super().__init__(coordinator)
+        self.entry = entry
+        self._ssid = None
+        self._safe_ssid = None
+        self._update_ssid_context()
 
-    async def decode_qr(self):
-        image_bytes = await self.fetch_image_bytes()
-        if not image_bytes:
-            return None
+    def _update_ssid_context(self):
+        data = self.coordinator.data or {}
+        ssid = data.get("ssid")
+        if ssid:
+            self._ssid = ssid
+            self._safe_ssid = normalize_ssid(ssid)
+        else:
+            self._ssid = "Unknown"
+            self._safe_ssid = f"entry_{self.entry.entry_id}"
 
-        try:
-            img = Image.open(BytesIO(image_bytes))
-            decoded = decode(img)
-        except Exception:
-            return None
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Group sensors under one device per config entry."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self.entry.entry_id)},
+            name=self.entry.title,
+            manufacturer="WiFi QR Decoder",
+            model="QR WiFi Credential Extractor",
+        )
 
-        if not decoded:
-            return None
+    @property
+    def available(self):
+        return self.coordinator.last_update_success
 
-        return decoded[0].data.decode("utf-8")
+    async def async_update(self):
+        """Request coordinator refresh."""
+        await self.coordinator.async_request_refresh()
 
-    def parse_wifi(self, qr_text):
-        parts = qr_text.split(";")
-        ssid = None
-        password = None
+    @property
+    def should_poll(self) -> bool:
+        return False
 
-        for p in parts:
-            if p.startswith("S:"):
-                ssid = p[2:]
-            if p.startswith("P:"):
-                password = p[2:]
+    @property
+    def extra_state_attributes(self):
+        attrs = {}
+        if self._ssid and self._ssid != "Unknown":
+            attrs["decoded_ssid"] = self._ssid
+        return attrs
 
-        return ssid, password
+    @property
+    def _data(self):
+        return self.coordinator.data or {}
 
 
 class WifiSSIDSensor(WifiBaseSensor):
-    _attr_name = "Guest WiFi SSID"
-    _attr_unique_id = "wifi_qr_ssid"
+    """Sensor for decoded SSID."""
 
-    async def async_update(self):
-        qr_text = await self.decode_qr()
-        if qr_text:
-            ssid, _ = self.parse_wifi(qr_text)
-            self._attr_native_value = ssid
+    def __init__(self, coordinator, entry):
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_{self._safe_ssid}_ssid"
+
+    @property
+    def name(self):
+        return f"{self._ssid} SSID"
+
+    @property
+    def native_value(self):
+        self._update_ssid_context()
+        return self._data.get("ssid")
 
 
 class WifiPasswordSensor(WifiBaseSensor):
-    _attr_name = "Guest WiFi Password"
-    _attr_unique_id = "wifi_qr_password"
+    """Sensor for decoded WiFi password."""
 
-    async def async_update(self):
-        qr_text = await self.decode_qr()
-        if qr_text:
-            _, password = self.parse_wifi(qr_text)
-            self._attr_native_value = password
+    def __init__(self, coordinator, entry):
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_{self._safe_ssid}_password"
+
+    @property
+    def name(self):
+        return f"{self._ssid} Password"
+
+    @property
+    def native_value(self):
+        self._update_ssid_context()
+        return self._data.get("password")
+
+
+class WifiDecodeStatusSensor(WifiBaseSensor):
+    """Sensor for decode status."""
+
+    def __init__(self, coordinator, entry):
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_{self._safe_ssid}_decode_status"
+
+    @property
+    def name(self):
+        return f"{self._ssid} Decode Status"
+
+    @property
+    def native_value(self):
+        self._update_ssid_context()
+        return self._data.get("status")

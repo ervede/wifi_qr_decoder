@@ -1,37 +1,64 @@
-from homeassistant.core import HomeAssistant, ServiceCall
+import logging
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers import entity_registry as er
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.typing import ConfigType
+from homeassistant.helpers import service
 
-from .const import DOMAIN, SERVICE_FORCE_DECODE
+from .const import DOMAIN, PLATFORMS, SERVICE_FORCE_DECODE
+from .coordinator import WifiQRCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup(hass: HomeAssistant, config: dict):
+async def async_setup(hass: HomeAssistant, config: ConfigType):
+    """Set up from YAML (not used)."""
+    hass.data.setdefault(DOMAIN, {})
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
+    """Set up WiFi QR Decoder from a config entry."""
+    coordinator = WifiQRCoordinator(hass, entry)
+    await coordinator.async_config_entry_first_refresh()
 
-    async def handle_force_decode(call: ServiceCall):
-        """Force all wifi_qr_decoder sensors to refresh."""
-        ent_reg = er.async_get(hass)
-        comp = hass.data["entity_components"]["sensor"]
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][entry.entry_id] = coordinator
 
-        for entity_id, entry_data in ent_reg.entities.items():
-            if entry_data.platform == DOMAIN:
-                obj = comp.get_entity(entity_id)
-                if obj and hasattr(obj, "async_update"):
-                    await obj.async_update()
-                    obj.async_write_ha_state()
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_FORCE_DECODE,
-        handle_force_decode
-    )
+    # Register service once
+    if not hass.services.has_service(DOMAIN, SERVICE_FORCE_DECODE):
+
+        async def handle_force_decode(call):
+            """Handle manual force decode for all or a specific entry."""
+            target_entry_id = call.data.get("config_entry_id")
+            if target_entry_id:
+                coord = hass.data[DOMAIN].get(target_entry_id)
+                if coord:
+                    await coord.async_request_refresh()
+            else:
+                for coord in hass.data[DOMAIN].values():
+                    await coord.async_request_refresh()
+
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_FORCE_DECODE,
+            handle_force_decode,
+        )
 
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
-    return await hass.config_entries.async_unload_platforms(entry, ["sensor"])
+    """Unload a config entry."""
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id, None)
+
+    # If no entries left, remove service
+    if not hass.data[DOMAIN]:
+        if hass.services.has_service(DOMAIN, SERVICE_FORCE_DECODE):
+            hass.services.async_remove(DOMAIN, SERVICE_FORCE_DECODE)
+
+    return unload_ok
