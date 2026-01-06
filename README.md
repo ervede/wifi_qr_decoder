@@ -7,7 +7,7 @@ It is ideal for guest WiFi dashboards, automations, and dynamic QR displays.
 > This integration requires the **UniFi Network** integration to be installed and configured.  
 > UniFi Network provides the WiFi QR code image entity that this integration decodes.
 
-[![Open this repository in Home Assistant](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?repository_url=https://github.com/ervede/wifi_qr_decoder)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ervede&repository=wifi_qr_decoder&category=Integration)
 ---
 
 ## ✨ Features
