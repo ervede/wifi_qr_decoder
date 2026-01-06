@@ -1,0 +1,41 @@
+name: Automatic Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Bump version and create tag
+        id: bump
+        uses: anothrNick/github-tag-action@1.67.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BUMP: patch
+          WITH_V: true
+
+      - name: Update manifest.json version
+        run: |
+          VERSION=${{ steps.bump.outputs.new_tag }}
+          CLEAN_VERSION=${VERSION#v}
+          sed -i "s/\"version\": \".*\"/\"version\": \"${CLEAN_VERSION}\"/" custom_components/wifi_qr_decoder/manifest.json
+
+      - name: Commit updated manifest
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add custom_components/wifi_qr_decoder/manifest.json
+          git commit -m "Update manifest version to ${{ steps.bump.outputs.new_tag }}" || echo "No changes to commit"
+          git push
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.bump.outputs.new_tag }}
