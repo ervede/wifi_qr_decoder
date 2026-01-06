@@ -3,6 +3,10 @@
 The **WiFi QR Decoder** integration extracts WiFi credentials (SSID and password) from a QR code provided by an `image.*` entity in Home Assistant.  
 It is ideal for guest WiFi dashboards, automations, and dynamic QR displays.
 
+> **⚠️ Requirement:**
+>  This integration requires the **UniFi Network** integration to be installed and configured.
+>  The UniFi integration provides the WiFi QR code image entity used for decoding.
+
 This integration provides:
 
 - **SSID sensor** – Extracted WiFi network name  
@@ -20,7 +24,7 @@ This integration provides:
 2. Copy the folder:
 
 ```
-custom_components/wifi_qr_decoder/
+/wifi_qr_decoder/
 ```
 
 into your Home Assistant:
