@@ -1,7 +1,7 @@
 {
   "domain": "wifi_qr_decoder",
   "name": "WiFi QR Decoder",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "documentation": "https://github.com/ervede/wifi_qr_decoder",
   "requirements": ["pyzbar"],
   "codeowners": ["@ervede"],
