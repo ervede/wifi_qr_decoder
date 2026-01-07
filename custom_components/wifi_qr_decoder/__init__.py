@@ -1,5 +1,7 @@
+import asyncio
 import logging
-from homeassistant.config_entries import ConfigEntry
+
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers import service
@@ -18,6 +20,36 @@ async def async_setup(hass: HomeAssistant, config: ConfigType):
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Set up WiFi QR Decoder from a config entry."""
+
+    # --- GRACEFUL RETRY FOR UNIFI DEPENDENCY ---
+    max_attempts = 30
+    attempt = 0
+
+    while attempt < max_attempts:
+        unifi_loaded = any(
+            ce.domain == "unifi" and ce.state == ConfigEntryState.LOADED
+            for ce in hass.config_entries.async_entries()
+        )
+
+        if unifi_loaded:
+            _LOGGER.debug("UniFi integration is loaded, continuing WiFi QR Decoder setup")
+            break
+
+        attempt += 1
+        _LOGGER.debug(
+            "Waiting for UniFi to load (attempt %s/%s)...",
+            attempt,
+            max_attempts,
+        )
+        await asyncio.sleep(1)
+
+    if not unifi_loaded:
+        _LOGGER.error(
+            "UniFi integration did not load in time. WiFi QR Decoder setup aborted."
+        )
+        return False
+    # --------------------------------------------------
+
     coordinator = WifiQRCoordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()
 
