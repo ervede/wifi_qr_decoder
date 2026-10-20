@@ -1,5 +1,9 @@
 # WiFi QR Decoder – Home Assistant Integration
 
+[![Add custom repository to HACS](https://img.shields.io/badge/HACS-Add%20custom%20repository-41BDF5?style=for-the-badge&logo=homeassistantcommunitystore&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ervede&repository=wifi_qr_decoder&category=integration)
+[![Validate](https://img.shields.io/github/actions/workflow/status/ervede/wifi_qr_decoder/validate.yml?branch=main&label=validate&style=for-the-badge)](https://github.com/ervede/wifi_qr_decoder/actions/workflows/validate.yml)
+[![Release](https://img.shields.io/github/v/release/ervede/wifi_qr_decoder?style=for-the-badge)](https://github.com/ervede/wifi_qr_decoder/releases)
+
 The **WiFi QR Decoder** integration extracts WiFi credentials (SSID and password) from a QR code provided by an `image.*` entity in Home Assistant.  
 It is ideal for guest WiFi dashboards, automations, and dynamic QR displays.
 
