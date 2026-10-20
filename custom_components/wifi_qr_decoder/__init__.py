@@ -4,12 +4,14 @@ import logging
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
-from homeassistant.helpers import service
+from homeassistant.helpers import config_validation as cv, service
 
 from .const import DOMAIN, PLATFORMS, SERVICE_FORCE_DECODE
 from .coordinator import WifiQRCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType):
