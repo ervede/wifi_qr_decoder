@@ -1,6 +1,6 @@
 {
   "name": "WiFi QR Decoder",
   "content_in_root": false,
-  "homeassistant": "2023.0.0",
+  "homeassistant": "2023.1.0",
   "render_readme": true
 }
