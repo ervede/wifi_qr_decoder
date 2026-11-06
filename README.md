@@ -18,7 +18,7 @@ It is ideal for guest WiFi dashboards, automations, and dynamic QR displays.
 This integration provides:
 
 - **SSID sensor** – Extracted WiFi network name  
-- **Password sensor** – Extracted WiFi password  
+- **Password sensor** – Extracted WiFi password, kept out of history, logbook and the recorder database by default  
 - **Decode status sensor** – Success/error state  
 - **Force‑decode service** – Manually trigger re-decoding  
 - **Multi‑SSID support** – Add as many SSIDs as you want  
@@ -164,31 +164,27 @@ Useful when:
 
 ## 🔐 Privacy & Security
 
-If you do not want the WiFi password stored in Home Assistant’s database, add this to your configuration.yaml:
+**The WiFi password is not stored in your history, logbook or recorder database by default.**
 
-```yaml
-recorder:
-  exclude:
-    entities:
-      - sensor.<ssid>_password
-```
-```yaml
-logbook:
-  exclude:
-    entities:
-      - sensor.<ssid>_password
-```
-```yaml
-history:
-  exclude:
-    entities:
-      - sensor.<ssid>_password
-```
-This prevents the password from appearing in:
+The password sensor never uses the password as its state, because entity states are written to the database. Its state is a masked placeholder (`********`), and the real password is available in the sensor's `password` attribute, which Home Assistant keeps out of the recorder database. The password is only held in memory while Home Assistant is running.
 
-- History
-- Logbook
-- Recorder database
+Read it in templates, automations and cards with:
+
+```jinja
+{{ state_attr('sensor.<ssid>_password', 'password') }}
+```
+
+Notes:
+
+- The password is still visible to anyone who can view the entity in **Developer Tools → States** or use the Home Assistant API, so restrict access to your instance accordingly.
+- The `decoded_ssid` attribute is recorded normally. It is not a secret.
+- The password still appears in the UniFi WiFi QR code image entity itself. This integration only decodes it.
+
+### Upgrading from an earlier version
+
+Earlier versions put the password in the sensor **state**. If you used `states('sensor.<ssid>_password')`, change it to `state_attr('sensor.<ssid>_password', 'password')`.
+
+Passwords recorded by earlier versions stay in your existing history until you purge them. To remove them, call the `recorder.purge_entities` action for `sensor.<ssid>_password` (with `keep_days: 0`), or let your normal purge age them out.
 
 ---
 
@@ -198,7 +194,7 @@ type: markdown
 content: |
   ## Guest WiFi
   **SSID:** {{ states('sensor.guest_wifi_ssid') }}
-  **Password:** {{ states('sensor.guest_wifi_password') }}
+  **Password:** {{ state_attr('sensor.guest_wifi_password', 'password') }}
 ```
 
 ---
