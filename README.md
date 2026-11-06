@@ -1,6 +1,6 @@
 # WiFi QR Decoder – Home Assistant Integration
 
-[![Add custom repository to HACS](https://img.shields.io/badge/HACS-Add%20custom%20repository-41BDF5?style=for-the-badge&logo=homeassistantcommunitystore&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ervede&repository=wifi_qr_decoder&category=integration)
+[![Add to Marketplace / HACS](https://img.shields.io/badge/Marketplace%20%2F%20HACS-Custom%20repository-41BDF5?style=for-the-badge&logo=homeassistantcommunitystore&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ervede&repository=wifi_qr_decoder&category=integration)
 [![Validate](https://img.shields.io/github/actions/workflow/status/ervede/wifi_qr_decoder/validate.yml?branch=main&label=validate&style=for-the-badge)](https://github.com/ervede/wifi_qr_decoder/actions/workflows/validate.yml)
 [![Release](https://img.shields.io/github/v/release/ervede/wifi_qr_decoder?style=for-the-badge)](https://github.com/ervede/wifi_qr_decoder/releases)
 
@@ -88,8 +88,25 @@ There is **no limit** to how many SSIDs you can add.
 
 ## 🔧 Installation
 
+### Via the Marketplace (Home Assistant 2026.11 and newer)
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ervede&repository=wifi_qr_decoder&category=Integration)
+Starting with Home Assistant 2026.11, HACS is built into Home Assistant as the **Marketplace**.
+
+1. Click the button below to open this repository in your Marketplace:
+
+   [![Open your Home Assistant instance and open a repository inside the Marketplace.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ervede&repository=wifi_qr_decoder&category=integration)
+
+   Or add it manually: **Settings → Marketplace → ⋮ → Custom repositories**, enter `https://github.com/ervede/wifi_qr_decoder` and choose the category **Integration**.
+2. Download **WiFi QR Decoder** and restart Home Assistant if prompted.
+3. Add the integration:
+
+   [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=wifi_qr_decoder)
+
+If you already had this integration installed through HACS, the Marketplace migrates it automatically when Home Assistant starts after the update. Nothing to do.
+
+### Via HACS (Home Assistant 2026.10 and older)
+
+Use the same button above, or in HACS go to **⋮ → Custom repositories** and add `https://github.com/ervede/wifi_qr_decoder` as an **Integration**. Then download it, restart Home Assistant and add the integration.
 
 ### Manual Installation
 
@@ -107,6 +124,10 @@ into your Home Assistant:
 ---
 
 ## ⚙️ Configuration
+
+[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=wifi_qr_decoder)
+
+Or manually:
 
 1. Go to **Settings → Devices & Services**  
 2. Click **Add Integration**  
