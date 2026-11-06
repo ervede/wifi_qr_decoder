@@ -8,6 +8,10 @@ from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
+# Shown as the password sensor state instead of the real password.
+MASKED_PASSWORD = "********"
+NO_PASSWORD = "none"
+
 
 def normalize_ssid(ssid: str) -> str:
     ssid = ssid.lower().strip()
@@ -100,7 +104,19 @@ class WifiSSIDSensor(WifiBaseSensor):
 
 
 class WifiPasswordSensor(WifiBaseSensor):
-    """Sensor for decoded WiFi password."""
+    """Sensor for the decoded WiFi password.
+
+    The password is never used as the entity state, because states are written
+    to the recorder, history and logbook. Instead the state is a masked
+    placeholder and the real password is exposed through the ``password``
+    attribute, which is excluded from the recorder database
+    (``_unrecorded_attributes``). Read it with
+    ``state_attr('sensor.<ssid>_password', 'password')``.
+    """
+
+    # Attributes listed here are kept in the live state machine but are not
+    # written to the recorder database (and so not to history/logbook).
+    _unrecorded_attributes = frozenset({"password"})
 
     def __init__(self, coordinator, entry):
         super().__init__(coordinator, entry)
@@ -113,7 +129,18 @@ class WifiPasswordSensor(WifiBaseSensor):
     @property
     def native_value(self):
         self._update_ssid_context()
-        return self._data.get("password")
+        password = self._data.get("password")
+        if password is None:
+            return None
+        return MASKED_PASSWORD if password else NO_PASSWORD
+
+    @property
+    def extra_state_attributes(self):
+        attrs = super().extra_state_attributes
+        password = self._data.get("password")
+        if password:
+            attrs["password"] = password
+        return attrs
 
 
 class WifiDecodeStatusSensor(WifiBaseSensor):
